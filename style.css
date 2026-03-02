@@ -1,0 +1,99 @@
+.main_background
+{
+    width: 100%;
+    height:100%;
+    background-color: rgb(155, 11, 203);
+    display: grid;
+    grid-template-rows: 1fr 6fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+    "header header header"
+    "menu content another_content1"
+    "footer footer footer";
+    padding: 5px;
+    gap:3px;
+    
+}
+.main_background div.header {
+  grid-area:header;
+  text-align: center;
+  
+}
+.main_background div.menu
+{
+grid-area:menu;
+}
+
+.main_background div.content
+{
+grid-area: content;
+display: grid;
+place-items: center;
+grid-template-rows: 1fr 1fr 1fr;
+
+background-color: aliceblue;
+}
+
+.main_background div.another_content1
+{
+max-width: 100px;
+}
+.main_background div.footer
+{
+    grid-area: footer;
+    text-align:center;
+
+}
+
+.select
+{
+    width:30%;
+    height:30%;
+    border-radius: 30px;
+    font-size: 25px;
+    
+}
+.new_game
+{
+    
+    width:35%;
+    height:75%;
+}
+.leaderboard 
+{
+    width:60%;
+    height:73%;
+}
+.continue_game
+{
+ 
+     width:60%;
+    height:73%;
+}
+.antet
+{
+    width:100%;
+    height:5%;
+}
+.game_buttons
+{
+    width:5%;
+    height:100%;
+    border-radius: 30px;
+    font-size: 25px;
+    background-image: url('.vscode/home-button.svg');
+    background-size:100%;
+    background-repeat: no-repeat;
+    cursor:pointer;
+}
+#tetris {
+    width: 34vw; /* Doar lățimea este fixă în procente */
+    height:34vw; /* Înălțimea se adaptează */
+    aspect-ratio: 34 / 34; /* OBLIGĂ păstrarea proporției corecte */
+    
+    background-color: #000;
+    border: 2px solid #fff;
+    image-rendering: pixelated; /* ESENȚIAL: previne blurarea la scalare */
+    display: block;
+    margin: 0px auto;
+}
