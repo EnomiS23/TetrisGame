@@ -47,7 +47,7 @@ max-width: 100px;
 
 .select
 {
-    width:30%;
+    width:35%;
     height:30%;
     border-radius: 30px;
     font-size: 25px;
@@ -56,8 +56,8 @@ max-width: 100px;
 .new_game
 {
     
-    width:35%;
-    height:75%;
+    width:40%;
+    height:80%;
 }
 .leaderboard 
 {
