@@ -39,8 +39,6 @@ function collide(playground, shape) {
     const [m, o] = [shape.matrix, shape.pos];
     for (let y = 0; y < m.length; ++y) {
         for (let x = 0; x < m[y].length; ++x) {
-            // Verificăm dacă celula din piesă este plină
-            // Apoi verificăm dacă în playground la acea poziție există ceva sau e marginea
             if (m[y][x] !== 0 &&
                 (playground[y + o.y] && playground[y + o.y][x + o.x]) !== 0) {
                 //daca la urmatorul rand se gaseste piesa,adica valoare de 1 
@@ -57,7 +55,6 @@ function merge(playground, shape) {
     shape.matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                // Transferăm culoarea piesei în matricea fixă a jocului
                 playground[y + shape.pos.y][x + shape.pos.x] = shape.color;
             }
         });
@@ -106,7 +103,7 @@ function removeRow(playground) {
         if (full) {
             const row = playground.splice(y, 1)[0].fill(0);
             playground.unshift(row);
-            ++y; // Verificăm același index din nou pentru că rândurile de sus au coborât
+            ++y; 
             updateScore(100);
         }
     }
