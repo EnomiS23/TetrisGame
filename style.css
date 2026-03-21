@@ -1,8 +1,27 @@
+
+* {
+    padding: 0px 0px;
+    margin: 0px 0px;
+}
+.title_text
+{
+    font-size: 30px;
+    color:#ffffff;
+}
 .main_background
 {
     width: 100%;
     height:100%;
-    background-color: rgb(155, 11, 203);
+background: linear-gradient(
+90deg,
+rgb(120, 40, 220) 0%,
+rgb(115, 50, 215) 15%,
+rgb(105, 60, 210) 30%,
+rgb(85, 80, 220) 50%,
+rgb(105, 60, 210) 70%,
+rgb(115, 50, 215) 85%,
+rgb(120, 40, 220) 100%
+);
     display: grid;
     grid-template-rows: 1fr 6fr 1fr;
     grid-template-columns: 1fr 1fr 1fr;
@@ -10,13 +29,13 @@
     "header header header"
     "menu content another_content1"
     "footer footer footer";
-    padding: 5px;
-    gap:3px;
-    
+    padding: 0px 0px;
+    margin:0px 0px;
 }
 .main_background div.header {
   grid-area:header;
   text-align: center;
+  margin-top:25px;
   
 }
 .main_background div.menu
@@ -30,7 +49,6 @@ grid-area: content;
 display: grid;
 place-items: center;
 grid-template-rows: 1fr 1fr 1fr;
-
 background-color: aliceblue;
 }
 
@@ -47,12 +65,69 @@ max-width: 100px;
 
 .select
 {
-    width:35%;
-    height:30%;
-    border-radius: 30px;
-    font-size: 25px;
+   --c1: #212121; /* Recommendation: same background color */
+  --c2: #8685ef;
+  --size-letter: 22px;
+  padding: 0.5em 1em;
+  font-size: var(--size-letter);
+
+  background-color: transparent;
+  border: calc(var(--size-letter) / 6) solid var(--c2);
+  border-radius: 0.2em;
+  cursor: pointer;
+
+  overflow: hidden;
+  position: relative;
+  transition: 300ms cubic-bezier(0.83, 0, 0.17, 1);
     
 }
+.select > .text {
+  font-weight: 700;
+  color: var(--c2);
+  position: relative;
+  z-index: 1;
+  transition: color 700ms cubic-bezier(0.83, 0, 0.17, 1);
+}
+.select::before {
+  top: 0;
+  left: 0;
+}
+
+.select::after {
+  top: 100%;
+  left: 100%;
+}
+
+.select::before,
+.select::after {
+  content: "";
+  width: 150%;
+  aspect-ratio: 1/1;
+  scale: 0;
+  transition: 1000ms cubic-bezier(0.76, 0, 0.24, 1);
+
+  background-color: var(--c2);
+  border-radius: 50%;
+
+  position: absolute;
+  translate: -50% -50%;
+}
+
+.select:hover {
+  & > span {
+    color: var(--c1);
+  }
+  &::before,
+  &::after {
+    scale: 1;
+  }
+}
+
+.select:active {
+  scale: 0.98;
+  filter: brightness(0.9);
+}
+
 .new_game
 {
     
@@ -86,14 +161,22 @@ max-width: 100px;
     background-repeat: no-repeat;
     cursor:pointer;
 }
+
 #tetris {
-    width: 34vw; /* Doar lățimea este fixă în procente */
-    height:34vw; /* Înălțimea se adaptează */
-    aspect-ratio: 34 / 34; /* OBLIGĂ păstrarea proporției corecte */
+    width: 34vw; 
+    height:34vw;
+    aspect-ratio: 34 / 34; 
     
     background-color: #000;
     border: 2px solid #fff;
-    image-rendering: pixelated; /* ESENȚIAL: previne blurarea la scalare */
+    image-rendering: pixelated; 
     display: block;
     margin: 0px auto;
 }
+
+/* display:flex; flex-direction:column; justify-content: center; centrezi un div pe coloana
+<div class="card">
+space-around pt spatiu intre content-uri
+flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe acelasi rand
+
+*/ 
