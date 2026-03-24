@@ -2,11 +2,17 @@
 * {
     padding: 0px 0px;
     margin: 0px 0px;
+ 
+
 }
+
 .title_text
 {
     font-size: 30px;
     color:#ffffff;
+    filter: blur(0.2rem);
+     
+  
 }
 .main_background
 {
@@ -36,20 +42,27 @@ rgb(120, 40, 220) 100%
   grid-area:header;
   text-align: center;
   margin-top:25px;
+ 
   
 }
 .main_background div.menu
 {
 grid-area:menu;
+
 }
 
-.main_background div.content
-{
-grid-area: content;
-display: grid;
-place-items: center;
-grid-template-rows: 1fr 1fr 1fr;
-background-color: aliceblue;
+.main_background div.content {
+  grid-area: content;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap:35px;
+  background-image: url('.vscode/wallpaper.jpg');
+  background-size: cover;
+  background-position: center;
+     filter: blur(0.2rem);
+   
 }
 
 .main_background div.another_content1
@@ -63,9 +76,9 @@ max-width: 100px;
 
 }
 
-.select
+.select ,.username_btn
 {
-   --c1: #212121; /* Recommendation: same background color */
+   --c1: #212121; 
   --c2: #8685ef;
   --size-letter: 22px;
   padding: 0.5em 1em;
@@ -75,31 +88,35 @@ max-width: 100px;
   border: calc(var(--size-letter) / 6) solid var(--c2);
   border-radius: 0.2em;
   cursor: pointer;
-
   overflow: hidden;
   position: relative;
   transition: 300ms cubic-bezier(0.83, 0, 0.17, 1);
     
 }
-.select > .text {
+.select > .text
+,.username_btn > .text {
   font-weight: 700;
   color: var(--c2);
   position: relative;
   z-index: 1;
   transition: color 700ms cubic-bezier(0.83, 0, 0.17, 1);
 }
-.select::before {
+.select::before
+,.username_btn::before {
   top: 0;
   left: 0;
 }
 
-.select::after {
+.select::after 
+,.username_btn::after{
   top: 100%;
   left: 100%;
 }
 
 .select::before,
-.select::after {
+.select::after
+,.username_btn::before
+,.username_btn::after {
   content: "";
   width: 150%;
   aspect-ratio: 1/1;
@@ -113,7 +130,8 @@ max-width: 100px;
   translate: -50% -50%;
 }
 
-.select:hover {
+.select:hover
+,.username_btn:hover {
   & > span {
     color: var(--c1);
   }
@@ -123,32 +141,32 @@ max-width: 100px;
   }
 }
 
-.select:active {
+.select:active
+,.username_btn:active {
   scale: 0.98;
   filter: brightness(0.9);
 }
 
-.new_game
+
+.leaderboard 
 {
-    
+   justify-self: center;
+    align-self: center;
     width:40%;
     height:80%;
 }
-.leaderboard 
-{
-    width:60%;
-    height:73%;
-}
 .continue_game
 {
- 
-     width:60%;
-    height:73%;
-}
-.antet
-{
-    width:100%;
-    height:5%;
+    margin-top:25px;
+   justify-self: center;
+    align-self: center;
+    width:fit-content;
+    height:fit-content;
+    border: none;
+    padding: 0; 
+    background: transparent; 
+    overflow: hidden;
+    border-radius: 20px;
 }
 .game_buttons
 {
@@ -166,12 +184,98 @@ max-width: 100px;
     width: 34vw; 
     height:34vw;
     aspect-ratio: 34 / 34; 
-    
     background-color: #000;
-    border: 2px solid #fff;
     image-rendering: pixelated; 
     display: block;
-    margin: 0px auto;
+    margin: 0px 0px;
+    border-radius: 20px;
+}
+
+
+.new_game {
+  margin-top:25px;
+   justify-self: center;
+    align-self: center;
+    width:fit-content;
+    height:fit-content;
+    border: none;
+    padding: 0; 
+    background: transparent; 
+    overflow: hidden;
+    border-radius: 20px;
+}
+
+/* 1. Containerul pentru gradientul de fundal (Bordura) */
+.gradient-container {
+    position: absolute;
+    inset: -50%; /* Acoperă tot spațiul chiar și când se rotește */
+    z-index: -2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: fit-content;
+  
+    
+}
+
+.gradient {
+    width: 100%;
+    aspect-ratio: 1;
+    background-image: linear-gradient(
+        90deg,
+        hsl(226, 81%, 64%),
+        hsl(271, 81%, 64%),
+        hsl(316, 81%, 64%),
+        hsl(1, 81%, 64%),
+        hsl(46, 81%, 64%),
+        hsl(91, 81%, 64%),
+        hsl(136, 81%, 64%),
+        hsl(181, 81%, 64%)
+    );
+    animation: rotate 3s linear infinite;
+}
+
+.glass-overlay {
+    position: relative;
+    margin: 5px 5px 5px 5px; 
+    padding: 0px 0px;
+    background: rgb(0, 0, 0); 
+    backdrop-filter: blur(15px); 
+    border-radius: 20px; 
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width:fit-content;
+    height: fit-content;
+    gap:20px;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.antet {
+    width: 100%;
+     height:fit-content;
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    color: rgb(255, 255, 255);
+    font-family: sans-serif;
+    margin-top:15px;
+}
+
+
+.game_buttons {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255,255,255,1);
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
 }
 
 /* display:flex; flex-direction:column; justify-content: center; centrezi un div pe coloana
@@ -180,3 +284,120 @@ space-around pt spatiu intre content-uri
 flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe acelasi rand
 
 */ 
+.boardgame
+{
+  background-color: white;
+  height: fit-content;
+
+}
+.play_button
+{
+ border: 0;
+  background: transparent;
+  box-sizing: border-box;
+  width: 0;
+  height: 35px;
+ border-style: double;
+    border-width: 0px 0 0px 30px;
+    border-color: rgb(255, 255, 255);
+  transition: 100ms all ease;
+  cursor: pointer;
+  
+
+}
+ .play_button.paused {
+   border-style: solid;
+   border-width: 17px 0 17px 30px;
+  border-color: transparent transparent transparent rgb(250, 250, 250);
+
+  }
+#play_button::after { content: "PAUSE"; }
+#play_button.paused::after { content: "PLAY"; }
+
+  .play_button:hover {
+    border-color: transparent transparent transparent #404040;
+  }
+  .splashscreen
+  {
+  position: fixed;
+  align-self: center;
+  justify-self: center;
+  height: 40%;
+  width:50%;
+  display: block;
+  z-index: 1;
+  align-content: center;
+  background-image: url('.vscode/wallpaper.jpg');
+  /* background-position: center;
+  background-size: contain; */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap:10px;
+  align-items: center;
+  filter: blur(0);
+  border-radius: 20px;
+  
+  }
+
+.username_btn
+{
+  width:30%;
+}
+/*input text from username*/
+/* From Uiverse.io by kamehame-ha */ 
+.coolinput {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  position: static;
+  max-width: 240px;
+}
+
+.coolinput label.text {
+  font-size: 0.75rem;
+  color: #8685ef;
+  font-weight: 700;
+  position: relative;
+  top: 0.5rem;
+  margin: 0 0 0 7px;
+  padding: 0 3px;
+  background: #e8e8e8;
+  width: fit-content;
+}
+
+.coolinput input[type=text].input {
+  padding: 11px 10px;
+  font-size: 0.75rem;
+  border: 2px #8685ef solid;
+  border-radius: 5px;
+  background: #e8e8e8;
+}
+
+.coolinput input[type=text].input:focus {
+  outline: none;
+}
+.antet_continue
+{
+  width: 100%;
+     height:fit-content;
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    color: rgb(255, 255, 255);
+    font-family: sans-serif;
+    margin-top:15px;
+}
+.lead_list
+{
+  width:50%;
+}
+.logs
+{
+  width:50%;
+}
+.text_lc
+{
+  color:white;
+}
