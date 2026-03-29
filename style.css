@@ -76,7 +76,7 @@ max-width: 100px;
 
 }
 
-.select ,.username_btn
+.select ,.username_btn ,.save_cancel
 {
    --c1: #212121; 
   --c2: #8685ef;
@@ -94,7 +94,8 @@ max-width: 100px;
     
 }
 .select > .text
-,.username_btn > .text {
+,.username_btn > .text
+,.save_cancel > .text {
   font-weight: 700;
   color: var(--c2);
   position: relative;
@@ -102,13 +103,15 @@ max-width: 100px;
   transition: color 700ms cubic-bezier(0.83, 0, 0.17, 1);
 }
 .select::before
-,.username_btn::before {
+,.username_btn::before 
+,.save_cancel::before{
   top: 0;
   left: 0;
 }
 
 .select::after 
-,.username_btn::after{
+,.username_btn::after
+,.save_cancel::after{
   top: 100%;
   left: 100%;
 }
@@ -116,7 +119,9 @@ max-width: 100px;
 .select::before,
 .select::after
 ,.username_btn::before
-,.username_btn::after {
+,.username_btn::after
+,.save_cancel::before,
+.save_cancel::after {
   content: "";
   width: 150%;
   aspect-ratio: 1/1;
@@ -131,7 +136,8 @@ max-width: 100px;
 }
 
 .select:hover
-,.username_btn:hover {
+,.username_btn:hover
+,.save_cancel:hover {
   & > span {
     color: var(--c1);
   }
@@ -142,7 +148,8 @@ max-width: 100px;
 }
 
 .select:active
-,.username_btn:active {
+,.username_btn:active 
+,.save_cancel:active{
   scale: 0.98;
   filter: brightness(0.9);
 }
@@ -401,3 +408,24 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
 {
   color:white;
 }
+.save_the_game
+{
+  position: fixed;
+  align-self: center;
+  justify-self: center;
+  height: 40%;
+  width:50%;
+  align-content: center;
+  background-image: url('.vscode/wallpaper.jpg');
+  /* background-position: center;
+  background-size: contain; */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap:10px;
+  align-items: center;
+  filter: blur(0);
+  border-radius: 20px;
+  
+}
+

@@ -213,7 +213,24 @@ window.addEventListener('keydown', e => {
 const resetBtn = document.getElementById('home');
 resetBtn.addEventListener('click', () => {
      document.getElementById("title_text").style.display="block";
+     document.getElementById("save_the_game").style.display="flex";
+     document.getElementById("content").style.filter = "blur(0.2rem)";
+    document.getElementById("title_text").style.filter = "blur(0.2rem)";
 });
+
+//pentru butonul de X 
+const resetBtn1 = document.getElementById('home1');
+resetBtn1.addEventListener('click', () => {
+     document.getElementById("title_text").style.display="block";
+});
+
+//pentru butonul de X 
+const resetBtn2 = document.getElementById('home2');
+resetBtn2.addEventListener('click', () => {
+     document.getElementById("title_text").style.display="block";
+});
+
+
 //pentru butonul de new_game
 const newGame = document.getElementById('new_game1');
 newGame.addEventListener('click', () => {
@@ -233,6 +250,24 @@ const leaderboard = document.getElementById('leader_board');
 leaderboard.addEventListener('click', () => {
      document.getElementById("title_text").style.display="none";
 });
+//save your progress
+//agree to save
+const agree = document.getElementById('agree_the_save');
+agree.addEventListener('click', () => {
+    //send the progress to database
+     document.getElementById("save_the_game").style.display="none";
+     document.getElementById("content").style.filter = "blur(0rem)";
+    document.getElementById("title_text").style.filter = "blur(0rem)";
+});
+//canceling the saving progress
+const dissagree = document.getElementById('cancel_the_save');
+dissagree.addEventListener('click', () => {
+    //just exit
+     document.getElementById("save_the_game").style.display="none";
+     document.getElementById("content").style.filter = "blur(0rem)";
+    document.getElementById("title_text").style.filter = "blur(0rem)";
+});
+
 resetShape();
 update();
 
@@ -258,6 +293,7 @@ submit.addEventListener('click', () => {
 
 function closeSplashScreen() {
   document.getElementById("splashscreen").style.display = "none";
+  document.getElementById("save_the_game").style.display="none";
 }
 
 function alertUserInput() {
