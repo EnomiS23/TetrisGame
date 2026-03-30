@@ -212,10 +212,10 @@ max-width: 100px;
     border-radius: 20px;
 }
 
-/* 1. Containerul pentru gradientul de fundal (Bordura) */
+/*containerul pentru gradientul de fundal-bordura */
 .gradient-container {
     position: absolute;
-    inset: -50%; /* Acoperă tot spațiul chiar și când se rotește */
+    inset: -50%; /* acopera tot spatiul chiar si cand se roteste */
     z-index: -2;
     display: flex;
     justify-content: center;

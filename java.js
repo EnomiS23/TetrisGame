@@ -185,12 +185,10 @@ function update(time = 0) {
     const deltaTime = time - lastTime;
     lastTime = time;
 
-    // DACĂ ESTE PAUZĂ: Desenăm doar arena și piesa (ca să se vadă), 
-    // dar nu calculăm căderea și cerem următorul cadru.
     if (isPaused) {
         draw(); 
         requestAnimationFrame(update);
-        return; // Oprim execuția restului funcției aici
+        return; 
     }
 
     dropCounter += deltaTime;
