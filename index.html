@@ -15,7 +15,13 @@
         <button id="new_game1" popovertarget="new_game" class="select"><span class="text">New Game</span></button>
         <button id="continuegame" popovertarget="continue_game" class="select"><span class="text">Continue</span></button>
         <button id="leader_board" popovertarget="leaderboard" class="select"><span class="text">Leaderboard</span></button>
-        
+        </div>
+
+        <div class="another_content1"></div>
+        <div class="footer"></div>
+        </div>
+
+        <div class="overlay-layer" id="overlay_layer">
        <div id="new_game" class="new_game" popover>
     <div class="gradient-container">
         <div class="gradient"></div>
@@ -39,6 +45,8 @@
     
     
 </div>
+
+
 <div id="continue_game" class="continue_game" popover>
    <div class="gradient-container">
         <div class="gradient"></div>
@@ -48,15 +56,21 @@
         <div class="antet_continue">
             <h2>Logs</h2>
             <button id="home1" popovertarget="continue_game" popovertargetaction="hide" class="game_buttons">X</button>
-
+        
+            
                 
     
         </div>
-        <div id="logs" class="logs">
-            <span class="text_lc">GameName</span>
-            <span class="text_lc">Score</span></div>
+        <div id="log-page" class="log-page">
+            <div  class="log-item">
+                <span class="text_lc">GameName</span>
+                <span class="text_lc date_lc">06/04/2026</span>
+                <span class="text_lc">Score</span>
+            </div>
+        </div>
         
-</div> </div>
+    </div>
+ </div>
 
     <div id="leaderboard" class="continue_game" popover>
          <div class="gradient-container">
@@ -77,18 +91,16 @@
         </div>
     </div>
        
-        <div class="another_content1"></div>
-        <div class="footer"></div>
-        </div>
-       
         <div class="splashscreen" id="splashscreen">
           
     
               <h1 style="color:white">Wellcome to my Tetris Game!</h1>
 
    <div class="coolinput">
-    <label for="input" class="text">Username:</label>
-    <input id="username_input" type="text" placeholder="Write here..." name="input" class="input">
+    <label for="splash_username_input" class="text">Username:</label>
+    <input id="splash_username_input" type="text" placeholder="Write here..." name="input" class="input">
+      <label for="splash_password_input" class="text">Password:</label>
+    <input id="splash_password_input" type="password" placeholder="Write here..." name="input" class="input">
 </div>
      <button type="submit" class="username_btn" id="username_btn"><span class="text">OK</span></button>
         </div>
@@ -98,7 +110,12 @@
 <div class="save_the_game" id="save_the_game">
      <h1 style="color:white">Save your progress...</h1>
     <div class="coolinput">
-        <input id="username_input" type="text" placeholder="Enter a name for the game" name="input" class="input">
+        <label for="save_game_name_input" class="text">Game name:</label>
+        <input id="save_game_name_input" type="text" placeholder="Enter a name for the game" name="save_game_name" class="input">
+    </div>
+    <div class="save-score-display">
+        <span class="text">Score to save:</span>
+        <span id="save_score_value" class="save-score-value">0</span>
     </div>
     <div class="body_save_game">
      <button type="submit" class="save_cancel" id="agree_the_save"><span class="text">Yes</span></button>
@@ -106,7 +123,7 @@
 </div>
 </div>
 
-</div>
+        </div>
        
         <script type="text/javascript" src="java.js"></script>
     </body>

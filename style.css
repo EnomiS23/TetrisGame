@@ -1,3 +1,8 @@
+html,
+body {
+    min-height: 100%;
+    height: 100%;
+}
 
 * {
     padding: 0px 0px;
@@ -10,13 +15,11 @@
 {
     font-size: 30px;
     color:#ffffff;
-    filter: blur(0.2rem);
-     
-  
 }
 .main_background
 {
     width: 100%;
+    min-height: 100vh;
     height:100%;
 background: linear-gradient(
 90deg,
@@ -61,12 +64,11 @@ grid-area:menu;
   background-image: url('.vscode/wallpaper.jpg');
   background-size: cover;
   background-position: center;
-     filter: blur(0.2rem);
-   
 }
 
 .main_background div.another_content1
 {
+    grid-area: another_content1;
 max-width: 100px;
 }
 .main_background div.footer
@@ -74,6 +76,17 @@ max-width: 100px;
     grid-area: footer;
     text-align:center;
 
+}
+
+.overlay-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.overlay-layer > * {
+    pointer-events: auto;
 }
 
 .select ,.username_btn ,.save_cancel
@@ -210,6 +223,138 @@ max-width: 100px;
     background: transparent; 
     overflow: hidden;
     border-radius: 20px;
+      z-index: 1;
+}
+
+/* Continue + Leaderboard: layout doar când popover-ul e deschis (altfel display:flex bate display:none al [popover]) */
+#continue_game.continue_game:popover-open,
+#leaderboard.continue_game:popover-open {
+    position: relative;
+    z-index: 0;
+    width: min(96vw, 768px);
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/*
+  width:100% + margin:5px lateral = depășește părintele; overflow:hidden taie asimetric chenarul gradient.
+  Flex + margin 5px + lățime implicită evită overflow-ul.
+*/
+#continue_game .glass-overlay,
+#leaderboard .glass-overlay {
+    position: relative;
+    z-index: 1;
+    width: auto;
+    max-width: none;
+    align-self: stretch;
+    margin: 5px;
+    box-sizing: border-box;
+    align-items: stretch;
+    padding: 0 12px 14px;
+}
+
+#continue_game .antet_continue {
+    box-sizing: border-box;
+    gap: 12px;
+    padding: 0 4px;
+}
+
+#continue_game .logs {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 0;
+}
+
+#continue_game .logs h2 {
+    margin: 0;
+    white-space: nowrap;
+}
+
+#continue_game .log-page {
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0 0;
+    box-sizing: border-box;
+}
+
+#continue_game .log-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+#continue_game .log-item .text_lc {
+    flex: unset;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+#leaderboard .lead_list {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    align-items: start;
+    padding: 0 4px 16px;
+    box-sizing: border-box;
+}
+
+#leaderboard .lead_list .text_lc {
+    flex: unset;
+    min-width: 0;
+    text-align: center;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+#leaderboard .antet {
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+/* Continue / Leaderboard: gradient exact pe aria modalei (sub marginile glass), fără decalaj lateral */
+#continue_game .gradient-container,
+#leaderboard .gradient-container {
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: auto;
+    min-height: 100%;
+    min-width: 100%;
+    pointer-events: none;
+}
+
+#continue_game .gradient-container .gradient,
+#leaderboard .gradient-container .gradient {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 180vmax;
+    height: 180vmax;
+    max-width: none;
+    max-height: none;
+    flex-shrink: 0;
+    aspect-ratio: 1;
+    animation: rotate_gradient_border 3s linear infinite;
+}
+
+@keyframes rotate_gradient_border {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }
 
 /*containerul pentru gradientul de fundal-bordura */
@@ -327,16 +472,14 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   .splashscreen
   {
   position: fixed;
-  align-self: center;
-  justify-self: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   height: 40%;
   width:50%;
-  display: block;
-  z-index: 1;
+  z-index: 60;
   align-content: center;
   background-image: url('.vscode/wallpaper.jpg');
-  /* background-position: center;
-  background-size: contain; */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -344,6 +487,8 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   align-items: center;
   filter: blur(0);
   border-radius: 20px;
+  padding: 24px;
+  box-sizing: border-box;
   
   }
 
@@ -361,7 +506,8 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   max-width: 240px;
 }
 
-.coolinput label.text {
+.coolinput label.text,
+.coolinput label.password {
   font-size: 0.75rem;
   color: #8685ef;
   font-weight: 700;
@@ -373,7 +519,8 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   width: fit-content;
 }
 
-.coolinput input[type=text].input {
+.coolinput input[type=text],
+.coolinput input[type=password].input {
   padding: 11px 10px;
   font-size: 0.75rem;
   border: 2px #8685ef solid;
@@ -381,7 +528,8 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   background: #e8e8e8;
 }
 
-.coolinput input[type=text].input:focus {
+.coolinput input[type=text],
+.coolinput input[type=password].input:focus {
   outline: none;
 }
 .antet_continue
@@ -400,32 +548,109 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
 {
   width:50%;
 }
-.logs
-{
-  width:50%;
-}
-.text_lc
-{
-  color:white;
-}
+
 .save_the_game
 {
   position: fixed;
-  align-self: center;
-  justify-self: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   height: 40%;
   width:50%;
   align-content: center;
   background-image: url('.vscode/wallpaper.jpg');
-  /* background-position: center;
-  background-size: contain; */
-  display: flex;
+  display: none;
   flex-direction: column;
   justify-content: center;
   gap:10px;
   align-items: center;
   filter: blur(0);
   border-radius: 20px;
+  padding: 24px;
+  box-sizing: border-box;
+  z-index: 70;
   
 }
 
+.save-score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.save-score-display .text {
+  font-size: 0.85rem;
+  color: #8685ef;
+  font-weight: 700;
+}
+
+.save-score-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #71eba4;
+  font-family: sans-serif;
+}
+
+.content.content--hidden {
+  display: none !important;
+}
+
+#main_background.main--dimmed .header,
+#main_background.main--dimmed .menu,
+#main_background.main--dimmed .content,
+#main_background.main--dimmed .another_content1,
+#main_background.main--dimmed .footer {
+  filter: blur(0.45rem);
+}
+
+    .log-page {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;             
+        width: 100%;           
+        height: auto;          
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.05); 
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin: 20px auto;     
+    }
+
+    .log-item {
+    display: flex;
+    justify-content: space-between; /* Distribuie cele 3 elemente egal */
+    align-items: center;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 1);
+    border-bottom: 2px solid #f56600;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+.log-item:hover {
+    background: rgba(222, 63, 63, 0.5);
+    border-color: #f56600;
+}
+
+.text_lc {
+    color: white;
+    font-family: sans-serif;
+    font-size: 14px;
+    /* Forțăm elementele să nu se înghesuie */
+    flex: 1; 
+}
+
+/* Aliniem data pe centru și scorul la dreapta */
+.date_lc {
+    text-align: center;
+    font-size: 12px;
+    color: #aaa; /* O culoare gri, mai discretă pentru dată */
+}
+
+.log-item span:last-child {
+    text-align: right;
+    color: #71eba4; /* Scorul rămâne verde */
+}

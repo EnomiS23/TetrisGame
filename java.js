@@ -24,6 +24,7 @@ canvas.height = 300;
 context.scale(20, 20); //pentru piesa de tetris
 let score = 0;
 let isPaused = false;
+let awaitingSaveAfterGameOver = false;
 const playground = createMatrix(15, 15);
 let currentShape = null;
 
@@ -135,10 +136,30 @@ function removeColumn(playground) {
 //functie de overflow,daca piesa care isi da spawn nu mai are loc atunci functia returneaza true si jocul e terminat
 function endGame(playground, shape) {
     if (collide(playground, shape)) {
-        playground.forEach(row => row.fill(0));
-        score = 0;
-        updateScore(0);
+        isPaused = true;
+        awaitingSaveAfterGameOver = true;
+        const saveEl = document.getElementById('save_the_game');
+        const scoreSaveEl = document.getElementById('save_score_value');
+        if (scoreSaveEl) scoreSaveEl.textContent = String(score);
+        if (saveEl) saveEl.style.display = 'flex';
+        document.getElementById('main_background').classList.add('main--dimmed');
+        const playBtn = document.getElementById('play_button');
+        if (playBtn) playBtn.classList.add('paused');
     }
+}
+
+function finalizeGameOverAfterSaveDialog() {
+    const saveEl = document.getElementById('save_the_game');
+    if (saveEl) saveEl.style.display = 'none';
+    document.getElementById('main_background').classList.remove('main--dimmed');
+    awaitingSaveAfterGameOver = false;
+    playground.forEach(row => row.fill(0));
+    score = 0;
+    updateScore(0);
+    isPaused = false;
+    const playBtn = document.getElementById('play_button');
+    if (playBtn) playBtn.classList.remove('paused');
+    resetShape();
 }
 
 function updateScore(update) {
@@ -212,22 +233,10 @@ const resetBtn = document.getElementById('home');
 resetBtn.addEventListener('click', () => {
      document.getElementById("title_text").style.display="block";
      document.getElementById("save_the_game").style.display="flex";
-     document.getElementById("content").style.filter = "blur(0.2rem)";
-    document.getElementById("title_text").style.filter = "blur(0.2rem)";
+     const saveScoreEl = document.getElementById('save_score_value');
+     if (saveScoreEl) saveScoreEl.textContent = String(score);
+     document.getElementById("main_background").classList.add("main--dimmed");
 });
-
-//pentru butonul de X 
-const resetBtn1 = document.getElementById('home1');
-resetBtn1.addEventListener('click', () => {
-     document.getElementById("title_text").style.display="block";
-});
-
-//pentru butonul de X 
-const resetBtn2 = document.getElementById('home2');
-resetBtn2.addEventListener('click', () => {
-     document.getElementById("title_text").style.display="block";
-});
-
 
 //pentru butonul de new_game
 const newGame = document.getElementById('new_game1');
@@ -237,6 +246,7 @@ newGame.addEventListener('click', () => {
     updateScore(0);
     resetShape();
      document.getElementById("title_text").style.display="none";
+     
 });
 //pentru butonul de continue
 const continuegame = document.getElementById('continuegame');
@@ -253,18 +263,46 @@ leaderboard.addEventListener('click', () => {
 const agree = document.getElementById('agree_the_save');
 agree.addEventListener('click', () => {
     //send the progress to database
+    if (awaitingSaveAfterGameOver) {
+        finalizeGameOverAfterSaveDialog();
+        return;
+    }
      document.getElementById("save_the_game").style.display="none";
-     document.getElementById("content").style.filter = "blur(0rem)";
-    document.getElementById("title_text").style.filter = "blur(0rem)";
+     document.getElementById("main_background").classList.remove("main--dimmed");
 });
 //canceling the saving progress
 const dissagree = document.getElementById('cancel_the_save');
 dissagree.addEventListener('click', () => {
     //just exit
+    if (awaitingSaveAfterGameOver) {
+        finalizeGameOverAfterSaveDialog();
+        return;
+    }
      document.getElementById("save_the_game").style.display="none";
-     document.getElementById("content").style.filter = "blur(0rem)";
-    document.getElementById("title_text").style.filter = "blur(0rem)";
+     document.getElementById("main_background").classList.remove("main--dimmed");
 });
+
+function syncHomepageWithPopovers() {
+    const ids = ['new_game', 'continue_game', 'leaderboard'];
+    const anyOpen = ids.some((id) => {
+        const el = document.getElementById(id);
+        return el && el.matches(':popover-open');
+    });
+    const content = document.getElementById('content');
+    const title = document.getElementById('title_text');
+    if (content) content.classList.toggle('content--hidden', anyOpen);
+    if (title) title.style.display = anyOpen ? 'none' : '';
+}
+
+['new_game', 'continue_game', 'leaderboard'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('toggle', () => {
+        syncHomepageWithPopovers();
+    });
+});
+
+document.getElementById('main_background').classList.add('main--dimmed');
 
 resetShape();
 update();
@@ -273,6 +311,7 @@ update();
 const allPlayButtons = document.querySelectorAll('.play_button');
 allPlayButtons.forEach(btn => {
     btn.addEventListener('click', () => {
+    if (awaitingSaveAfterGameOver) return;
     isPaused = !isPaused; 
     btn.classList.toggle("paused", isPaused);
     btn.innerText = isPaused ? "START" : "STOP";
@@ -283,8 +322,7 @@ allPlayButtons.forEach(btn => {
 submit.addEventListener('click', () => {
     if (alertUserInput()) return; 
     closeSplashScreen();
-    document.getElementById("content").style.filter = "blur(0rem)";
-    document.getElementById("title_text").style.filter = "blur(0rem)";
+    document.getElementById("main_background").classList.remove("main--dimmed");
     
     console.log("Acces permis! Succes la Tetris!");
 });
@@ -295,7 +333,7 @@ function closeSplashScreen() {
 }
 
 function alertUserInput() {
-    const inputElement = document.getElementById("username_input");
+    const inputElement = document.getElementById("splash_username_input");
     const username = inputElement.value.trim();
     if (username === "" || username.length < 4) {
         alert("Introduceti un nume de utilizator cu cel putin 4 caractere!");
@@ -304,6 +342,21 @@ function alertUserInput() {
     document.getElementById("username").innerHTML = username;
     return false; 
 }
+function addLogToPage(gameName, score, timestamp) {
+    const container = document.getElementById('logs-container');
+    const logItem = document.createElement('div');
+    logItem.className = 'log-item';
+    logItem.innerHTML = `
+        <h4>${gameName}</h4>
+        <p><strong>Scor:</strong> ${score}</p>
+        <p><small>${timestamp}</small></p>
+    `;
+
+    container.prepend(logItem);
+}
+
+
+// addLogToPage("Tetris Retro", 1500, new Date().toLocaleString());
 
 function send_score()
 {
