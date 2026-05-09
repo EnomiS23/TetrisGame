@@ -15,6 +15,7 @@
         <button id="new_game1" popovertarget="new_game" class="select"><span class="text">New Game</span></button>
         <button id="continuegame" popovertarget="continue_game" class="select"><span class="text">Continue</span></button>
         <button id="leader_board" popovertarget="leaderboard" class="select"><span class="text">Leaderboard</span></button>
+        <button id="multiplayerbtn" popovertarget="multiplayer" class="select"><span class="text">Multiplayer</span></button>
         </div>
 
         <div class="another_content1"></div>
@@ -90,6 +91,20 @@
         </div>
         </div>
     </div>
+
+    <div id="multiplayer" class="splashscreen" popover>
+        <div class="antet">
+        <h1 style="color:white">Play with your friend!</h1>
+        <button id="home3" popovertarget="multiplayer" popovertargetaction="hide" class="game_buttons">X</button>
+        </div>
+        <div class="coolinput">
+         <label for="join_room_input" class="text">Join a room:</label>
+         <input id="join_room_input" type="text" placeholder="Write here..." name="input" class="input">
+     </div>
+          <button type="submit" class="username_btn" id="join_room_btn"><span class="text">Join a room</span></button>
+          <button type="submit" class="username_btn" id="create_room_btn"><span class="text">Create a room</span></button>
+          
+    </div>
        
         <div class="splashscreen" id="splashscreen">
           
@@ -107,7 +122,7 @@
 
 
 
-<div class="save_the_game" id="save_the_game">
+<div class="save_the_game" id="save_the_game" popover>
      <h1 style="color:white">Save your progress...</h1>
     <div class="coolinput">
         <label for="save_game_name_input" class="text">Game name:</label>

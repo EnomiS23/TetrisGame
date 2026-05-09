@@ -27,6 +27,62 @@ let isPaused = false;
 let awaitingSaveAfterGameOver = false;
 const playground = createMatrix(15, 15);
 let currentShape = null;
+let currentUser = { userId: null, username: null };
+
+async function api(action, payload = null, method = 'POST') {
+    const url = method === 'GET'
+        ? `db.php?action=${encodeURIComponent(action)}${payload ? '&' + new URLSearchParams(payload).toString() : ''}`
+        : `db.php`;
+
+    const res = await fetch(url, {
+        method,
+        headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
+        body: method === 'POST' ? JSON.stringify({ action, ...(payload || {}) }) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+    }
+    return data;
+}
+
+function getSavePayload() {
+    // playground conține 0 sau string de culoare; salvăm ca JSON ca să putem reface exact grid-ul
+    return {
+        grid: playground,
+        currentShape: currentShape
+            ? { matrix: currentShape.matrix, color: currentShape.color, pos: currentShape.pos }
+            : null,
+    };
+}
+
+function applyLoadedGame(game) {
+    // game.playground poate fi {grid, currentShape} sau direct grid (compat)
+    const pg = game.playground;
+    const grid = pg && typeof pg === 'object' && Array.isArray(pg.grid) ? pg.grid : pg;
+    const shape = pg && typeof pg === 'object' ? pg.currentShape : null;
+
+    if (Array.isArray(grid)) {
+        for (let y = 0; y < playground.length; y++) {
+            for (let x = 0; x < playground[y].length; x++) {
+                playground[y][x] = grid?.[y]?.[x] ?? 0;
+            }
+        }
+    }
+    score = Number(game.scor) || 0;
+    const scoreElement = document.getElementById('score');
+    if (scoreElement) scoreElement.innerHTML = String(score);
+
+    if (shape && shape.matrix && shape.pos) {
+        currentShape = new Shape(shape.matrix, shape.color || '#f56600');
+        currentShape.pos = shape.pos;
+    } else {
+        resetShape();
+    }
+
+    isPaused = false;
+    startGameLoop();
+}
 
 function createMatrix(w, h) {
     const matrix = [];
@@ -141,7 +197,11 @@ function endGame(playground, shape) {
         const saveEl = document.getElementById('save_the_game');
         const scoreSaveEl = document.getElementById('save_score_value');
         if (scoreSaveEl) scoreSaveEl.textContent = String(score);
-        if (saveEl) saveEl.style.display = 'flex';
+        if (saveEl && typeof saveEl.showPopover === 'function') {
+            saveEl.showPopover();
+        } else if (saveEl) {
+            saveEl.style.display = 'flex';
+        }
         document.getElementById('main_background').classList.add('main--dimmed');
         const playBtn = document.getElementById('play_button');
         if (playBtn) playBtn.classList.add('paused');
@@ -150,7 +210,11 @@ function endGame(playground, shape) {
 
 function finalizeGameOverAfterSaveDialog() {
     const saveEl = document.getElementById('save_the_game');
-    if (saveEl) saveEl.style.display = 'none';
+    if (saveEl && typeof saveEl.hidePopover === 'function') {
+        saveEl.hidePopover();
+    } else if (saveEl) {
+        saveEl.style.display = 'none';
+    }
     document.getElementById('main_background').classList.remove('main--dimmed');
     awaitingSaveAfterGameOver = false;
     playground.forEach(row => row.fill(0));
@@ -160,6 +224,7 @@ function finalizeGameOverAfterSaveDialog() {
     const playBtn = document.getElementById('play_button');
     if (playBtn) playBtn.classList.remove('paused');
     resetShape();
+    startGameLoop();
 }
 
 function updateScore(update) {
@@ -202,13 +267,32 @@ function draw() {
 
 let dropCounter = 0;
 let lastTime = 0;
+let rafId = null;
+let gameLoopRunning = false;
+
+function startGameLoop() {
+    if (gameLoopRunning) return;
+    gameLoopRunning = true;
+    lastTime = 0;
+    dropCounter = 0;
+    rafId = requestAnimationFrame(update);
+}
+
+function stopGameLoop() {
+    gameLoopRunning = false;
+    if (rafId != null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+    }
+}
 function update(time = 0) {
+    if (!gameLoopRunning) return;
     const deltaTime = time - lastTime;
     lastTime = time;
 
     if (isPaused) {
         draw(); 
-        requestAnimationFrame(update);
+        rafId = requestAnimationFrame(update);
         return; 
     }
 
@@ -219,7 +303,7 @@ function update(time = 0) {
     }
 
     draw();
-    requestAnimationFrame(update);
+    rafId = requestAnimationFrame(update);
 }
 
 window.addEventListener('keydown', e => {
@@ -231,8 +315,16 @@ window.addEventListener('keydown', e => {
 //pentru butonul de X 
 const resetBtn = document.getElementById('home');
 resetBtn.addEventListener('click', () => {
+     // Când închizi jocul și apare save dialog, jocul nu trebuie să mai ruleze în fundal
+     isPaused = true;
+     stopGameLoop();
      document.getElementById("title_text").style.display="block";
-     document.getElementById("save_the_game").style.display="flex";
+     const saveEl = document.getElementById("save_the_game");
+     if (saveEl && typeof saveEl.showPopover === 'function') {
+         saveEl.showPopover();
+     } else if (saveEl) {
+         saveEl.style.display="flex";
+     }
      const saveScoreEl = document.getElementById('save_score_value');
      if (saveScoreEl) saveScoreEl.textContent = String(score);
      document.getElementById("main_background").classList.add("main--dimmed");
@@ -252,22 +344,124 @@ newGame.addEventListener('click', () => {
 const continuegame = document.getElementById('continuegame');
 continuegame.addEventListener('click', () => {
      document.getElementById("title_text").style.display="none";
+     api('list_logs', null, 'GET')
+         .then((data) => {
+             const logPage = document.getElementById('log-page');
+             if (!logPage) return;
+             logPage.innerHTML = '';
+
+             (data.logs || []).forEach((row) => {
+                 const item = document.createElement('div');
+                 item.className = 'log-item';
+                 item.style.cursor = 'pointer';
+                 item.dataset.matriceId = row.matriceId;
+                 item.innerHTML = `
+                    <span class="text_lc">${row.matrice_nume}</span>
+                    <span class="text_lc date_lc">${row.timestamp}</span>
+                    <span class="text_lc">${row.scor}</span>
+                 `;
+                 item.addEventListener('click', () => {
+                     const id = item.dataset.matriceId;
+                     api('load_game', { matriceId: id }, 'GET')
+                         .then((g) => {
+                             // deschide popover-ul jocului și aplică state-ul
+                             const gamePopover = document.getElementById('new_game');
+                             if (gamePopover && typeof gamePopover.showPopover === 'function') {
+                                 gamePopover.showPopover();
+                             }
+                             applyLoadedGame(g.game);
+                         })
+                         .catch((err) => alert(err.message || 'Eroare load game'));
+                 });
+                 logPage.appendChild(item);
+             });
+         })
+         .catch((err) => {
+             console.error(err);
+             // dacă user nu e logat, rămâi pe splash
+         });
 });
 //pentru butonul de leaderboard
 const leaderboard = document.getElementById('leader_board');
 leaderboard.addEventListener('click', () => {
      document.getElementById("title_text").style.display="none";
+     api('leaderboard_top10', null, 'GET')
+         .then((data) => {
+             const lead = document.getElementById('lead_list');
+             if (!lead) return;
+             lead.innerHTML = `
+                <span class="text_lc">Place</span>
+                <span class="text_lc">Username</span>
+                <span class="text_lc">GameName</span>
+                <span class="text_lc">Score</span>
+             `;
+             (data.top || []).forEach((row, idx) => {
+                 const place = document.createElement('span');
+                 place.className = 'text_lc';
+                 place.textContent = String(idx + 1);
+
+                 const user = document.createElement('span');
+                 user.className = 'text_lc';
+                 user.textContent = row.username;
+
+                 const game = document.createElement('span');
+                 game.className = 'text_lc';
+                 game.textContent = row.matrice_nume;
+
+                 const scor = document.createElement('span');
+                 scor.className = 'text_lc';
+                 scor.textContent = String(row.scor);
+
+                 lead.appendChild(place);
+                 lead.appendChild(user);
+                 lead.appendChild(game);
+                 lead.appendChild(scor);
+             });
+         })
+         .catch((err) => console.error(err));
 });
+// NOTĂ: nu ascundem titlul la click în containerul multiplayer.
+// Click-ul pe X (home3) se propagă și ar ascunde titlul “Welcome...”.
+const home3 = document.getElementById('home3');
+home3.addEventListener('click', (e) => {
+     e.stopPropagation();
+     document.getElementById("multiplayer").style.display="none";
+     const title = document.getElementById("title_text");
+     if (title) title.style.display = "block";
+});
+
 //save your progress
 //agree to save
 const agree = document.getElementById('agree_the_save');
 agree.addEventListener('click', () => {
-    //send the progress to database
+    const gameNameEl = document.getElementById("save_game_name_input");
+    const matrice_nume = gameNameEl ? gameNameEl.value.trim() : '';
+    if (!matrice_nume) {
+        alert("Scrie un nume pentru joc (Game name).");
+        return;
+    }
+
+    api('save_game', {
+        matrice_nume,
+        scor: score,
+        playground: getSavePayload(),
+    })
+        .then((data) => {
+            console.log("Salvat:", data);
+        })
+        .catch((err) => {
+            alert(err.message || "Eroare la salvare");
+        });
     if (awaitingSaveAfterGameOver) {
         finalizeGameOverAfterSaveDialog();
         return;
     }
-     document.getElementById("save_the_game").style.display="none";
+     const saveEl = document.getElementById("save_the_game");
+     if (saveEl && typeof saveEl.hidePopover === 'function') {
+         saveEl.hidePopover();
+     } else if (saveEl) {
+         saveEl.style.display="none";
+     }
      document.getElementById("main_background").classList.remove("main--dimmed");
 });
 //canceling the saving progress
@@ -278,12 +472,17 @@ dissagree.addEventListener('click', () => {
         finalizeGameOverAfterSaveDialog();
         return;
     }
-     document.getElementById("save_the_game").style.display="none";
+     const saveEl = document.getElementById("save_the_game");
+     if (saveEl && typeof saveEl.hidePopover === 'function') {
+         saveEl.hidePopover();
+     } else if (saveEl) {
+         saveEl.style.display="none";
+     }
      document.getElementById("main_background").classList.remove("main--dimmed");
 });
 
 function syncHomepageWithPopovers() {
-    const ids = ['new_game', 'continue_game', 'leaderboard'];
+    const ids = ['new_game', 'continue_game', 'leaderboard', 'multiplayer'];
     const anyOpen = ids.some((id) => {
         const el = document.getElementById(id);
         return el && el.matches(':popover-open');
@@ -294,7 +493,7 @@ function syncHomepageWithPopovers() {
     if (title) title.style.display = anyOpen ? 'none' : '';
 }
 
-['new_game', 'continue_game', 'leaderboard'].forEach((id) => {
+['new_game', 'continue_game', 'leaderboard', 'multiplayer'].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('toggle', () => {
@@ -305,7 +504,12 @@ function syncHomepageWithPopovers() {
 document.getElementById('main_background').classList.add('main--dimmed');
 
 resetShape();
-update();
+startGameLoop();
+ 
+const multiplayerbtn = document.getElementById('multiplayerbtn');
+multiplayerbtn.addEventListener('click', () => {
+    document.getElementById("multiplayer").style.display="flex";
+});
 
 //play button function pt new_game
 const allPlayButtons = document.querySelectorAll('.play_button');
@@ -320,27 +524,53 @@ allPlayButtons.forEach(btn => {
 
  const submit = document.getElementById("username_btn");
 submit.addEventListener('click', () => {
-    if (alertUserInput()) return; 
-    closeSplashScreen();
-    document.getElementById("main_background").classList.remove("main--dimmed");
-    
-    console.log("Acces permis! Succes la Tetris!");
+    const usernameInput = document.getElementById("splash_username_input");
+    const passwordInput = document.getElementById("splash_password_input");
+    const username = usernameInput ? usernameInput.value.trim() : '';
+    const password = passwordInput ? passwordInput.value : '';
+
+    if (username === "" || username.length < 4) {
+        alert("Introduceti un nume de utilizator cu cel putin 4 caractere!");
+        return;
+    }
+    if (password === "" || password.length < 4) {
+        alert("Introduceti o parola cu cel putin 4 caractere!");
+        return;
+    }
+
+    api('auth', { username, password })
+        .then((data) => {
+            currentUser = { userId: data.userId, username: data.username };
+            const userEl = document.getElementById("username");
+            if (userEl) userEl.textContent = data.username;
+            closeSplashScreen();
+            document.getElementById("main_background").classList.remove("main--dimmed");
+        })
+        .catch((err) => {
+            alert(err.message || "Eroare la autentificare");
+        });
 });
 
 function closeSplashScreen() {
   document.getElementById("splashscreen").style.display = "none";
-  document.getElementById("save_the_game").style.display="none";
+  const saveEl = document.getElementById("save_the_game");
+  if (saveEl && typeof saveEl.hidePopover === 'function') {
+      saveEl.hidePopover();
+  } else if (saveEl) {
+      saveEl.style.display="none";
+  }
+  document.getElementById("multiplayer").style.display="none";
 }
 
 function alertUserInput() {
+    // păstrată doar ca utilitar, dar autentificarea reală e în api('auth')
     const inputElement = document.getElementById("splash_username_input");
-    const username = inputElement.value.trim();
+    const username = inputElement ? inputElement.value.trim() : '';
     if (username === "" || username.length < 4) {
         alert("Introduceti un nume de utilizator cu cel putin 4 caractere!");
-        return true; 
+        return true;
     }
-    document.getElementById("username").innerHTML = username;
-    return false; 
+    return false;
 }
 function addLogToPage(gameName, score, timestamp) {
     const container = document.getElementById('logs-container');
@@ -358,9 +588,7 @@ function addLogToPage(gameName, score, timestamp) {
 
 // addLogToPage("Tetris Retro", 1500, new Date().toLocaleString());
 
-function send_score()
-{
-
+function send_score() {
 }
 function receive_game()
 {

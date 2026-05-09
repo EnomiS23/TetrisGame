@@ -61,7 +61,7 @@ grid-area:menu;
   align-items: center;
   justify-content: center;
   gap:35px;
-  background-image: url('.vscode/wallpaper.jpg');
+  background-image: url('.vscode/home.jpg');
   background-size: cover;
   background-position: center;
 }
@@ -575,6 +575,17 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   
 }
 
+/* Save dialog ca popover: afișează layout-ul doar când e deschis */
+#save_the_game.save_the_game:popover-open {
+  display: flex;
+
+  /* scoate stilurile implicite de popover (alb + border) */
+  border: none;
+  background-color: transparent;
+  margin: 0;
+  color: white;
+}
+
 .save-score-display {
   display: flex;
   flex-direction: column;
@@ -596,31 +607,7 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   color: #71eba4;
   font-family: sans-serif;
 }
-.multiplayer
-{ position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  height: 40%;
-  width:50%;
-  align-content: center;
-  background-image: url('.vscode/wallpaper.jpg');
-  /* Popover-ul își gestionează vizibilitatea; nu forța display:none aici */
-  flex-direction: column;
-  justify-content: center;
-  gap:10px;
-  align-items: center;
-  filter: blur(0);
-  border-radius: 20px;
-  padding: 24px;
-  box-sizing: border-box;
-  z-index: 70;
-}
 
-/* Layout doar când popover-ul e deschis (altfel display:none e setat de [popover]) */
-#multiplayer.multiplayer:popover-open {
-  display: flex;
-}
 .content.content--hidden {
   display: none !important;
 }
