@@ -457,6 +457,8 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   
 
 }
+
+
  .play_button.paused {
    border-style: solid;
    border-width: 17px 0 17px 30px;
@@ -491,6 +493,7 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   box-sizing: border-box;
   
   }
+
 
 .username_btn
 {
@@ -593,7 +596,31 @@ flex-wrap:gap ->ca sa faci sa se duca pe rand urmator daca nu mai are loc pe ace
   color: #71eba4;
   font-family: sans-serif;
 }
+.multiplayer
+{ position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 40%;
+  width:50%;
+  align-content: center;
+  background-image: url('.vscode/wallpaper.jpg');
+  /* Popover-ul își gestionează vizibilitatea; nu forța display:none aici */
+  flex-direction: column;
+  justify-content: center;
+  gap:10px;
+  align-items: center;
+  filter: blur(0);
+  border-radius: 20px;
+  padding: 24px;
+  box-sizing: border-box;
+  z-index: 70;
+}
 
+/* Layout doar când popover-ul e deschis (altfel display:none e setat de [popover]) */
+#multiplayer.multiplayer:popover-open {
+  display: flex;
+}
 .content.content--hidden {
   display: none !important;
 }
