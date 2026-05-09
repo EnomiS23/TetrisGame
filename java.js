@@ -24,10 +24,12 @@ canvas.height = 300;
 context.scale(20, 20); //pentru piesa de tetris
 let score = 0;
 let isPaused = false;
-let awaitingSaveAfterGameOver = false;
+let gameOverSubmitting = false;
 const playground = createMatrix(15, 15);
 let currentShape = null;
 let currentUser = { userId: null, username: null };
+let currentGameMeta = { matriceId: null, matrice_nume: null };
+const SAVED_CELL_COLOR = '#3877FF';
 
 async function api(action, payload = null, method = 'POST') {
     const url = method === 'GET'
@@ -47,25 +49,18 @@ async function api(action, payload = null, method = 'POST') {
 }
 
 function getSavePayload() {
-    // playground conține 0 sau string de culoare; salvăm ca JSON ca să putem reface exact grid-ul
-    return {
-        grid: playground,
-        currentShape: currentShape
-            ? { matrix: currentShape.matrix, color: currentShape.color, pos: currentShape.pos }
-            : null,
-    };
+    // În DB salvăm doar 0/1 (1 = există piesă)
+    return playground.map(row => row.map(cell => (cell === 0 ? 0 : 1)));
 }
 
 function applyLoadedGame(game) {
-    // game.playground poate fi {grid, currentShape} sau direct grid (compat)
-    const pg = game.playground;
-    const grid = pg && typeof pg === 'object' && Array.isArray(pg.grid) ? pg.grid : pg;
-    const shape = pg && typeof pg === 'object' ? pg.currentShape : null;
+    // DB returnează 0/1; în UI colorăm 1 cu albastru
+    const grid = game.playground;
 
     if (Array.isArray(grid)) {
         for (let y = 0; y < playground.length; y++) {
             for (let x = 0; x < playground[y].length; x++) {
-                playground[y][x] = grid?.[y]?.[x] ?? 0;
+                playground[y][x] = grid?.[y]?.[x] ? SAVED_CELL_COLOR : 0;
             }
         }
     }
@@ -73,12 +68,8 @@ function applyLoadedGame(game) {
     const scoreElement = document.getElementById('score');
     if (scoreElement) scoreElement.innerHTML = String(score);
 
-    if (shape && shape.matrix && shape.pos) {
-        currentShape = new Shape(shape.matrix, shape.color || '#f56600');
-        currentShape.pos = shape.pos;
-    } else {
-        resetShape();
-    }
+    // La resume nu reconstituim figura exactă; reîncepem cu o piesă nouă
+    resetShape();
 
     isPaused = false;
     startGameLoop();
@@ -193,39 +184,46 @@ function removeColumn(playground) {
 function endGame(playground, shape) {
     if (collide(playground, shape)) {
         isPaused = true;
-        awaitingSaveAfterGameOver = true;
-        const saveEl = document.getElementById('save_the_game');
-        const scoreSaveEl = document.getElementById('save_score_value');
-        if (scoreSaveEl) scoreSaveEl.textContent = String(score);
-        if (saveEl && typeof saveEl.showPopover === 'function') {
-            saveEl.showPopover();
-        } else if (saveEl) {
-            saveEl.style.display = 'flex';
+        stopGameLoop();
+        if (gameOverSubmitting) return;
+        gameOverSubmitting = true;
+
+        // Cerință: la Game Over NU mai oferim opțiunea de Save.
+        // Dacă e New Game (nu avem matriceId), permitem introducerea numelui (prompt simplu).
+        let name = currentGameMeta.matrice_nume;
+        if (!currentGameMeta.matriceId) {
+            name = (prompt('Game over! Scrie un nume pentru joc (Game name):') || '').trim();
+            // Dacă user anulează, tot continuăm fără nume (nu salvăm în logs oricum).
         }
-        document.getElementById('main_background').classList.add('main--dimmed');
-        const playBtn = document.getElementById('play_button');
-        if (playBtn) playBtn.classList.add('paused');
+
+        api('submit_game_over', {
+            scor: score,
+            matriceId: currentGameMeta.matriceId || 0,
+            // name e doar pentru UI/viitor; backend-ul acum salvează doar scor + userId în leaderboard
+            matrice_nume: name || null,
+        })
+            .then((r) => {
+                // opțional: poți afișa un mesaj
+                // console.log('Game over submitted. inserted=', r.inserted);
+            })
+            .catch((err) => {
+                console.error('submit_game_over failed:', err);
+            })
+            .finally(() => {
+                // Reset joc
+                playground.forEach(row => row.fill(0));
+                score = 0;
+                updateScore(0);
+                isPaused = false;
+                currentGameMeta = { matriceId: null, matrice_nume: null };
+                gameOverSubmitting = false;
+                resetShape();
+                startGameLoop();
+            });
     }
 }
 
-function finalizeGameOverAfterSaveDialog() {
-    const saveEl = document.getElementById('save_the_game');
-    if (saveEl && typeof saveEl.hidePopover === 'function') {
-        saveEl.hidePopover();
-    } else if (saveEl) {
-        saveEl.style.display = 'none';
-    }
-    document.getElementById('main_background').classList.remove('main--dimmed');
-    awaitingSaveAfterGameOver = false;
-    playground.forEach(row => row.fill(0));
-    score = 0;
-    updateScore(0);
-    isPaused = false;
-    const playBtn = document.getElementById('play_button');
-    if (playBtn) playBtn.classList.remove('paused');
-    resetShape();
-    startGameLoop();
-}
+// finalizeGameOverAfterSaveDialog a fost eliminat: la Game Over nu mai există dialog de salvare.
 
 function updateScore(update) {
     score += update;
@@ -318,6 +316,27 @@ resetBtn.addEventListener('click', () => {
      // Când închizi jocul și apare save dialog, jocul nu trebuie să mai ruleze în fundal
      isPaused = true;
      stopGameLoop();
+
+     // Dacă jocul e deschis din Continue (are matriceId), facem autosave pe același joc și ieșim fără dialog.
+     if (currentGameMeta.matriceId) {
+         api('update_game', {
+             matriceId: currentGameMeta.matriceId,
+             scor: score,
+             playground: getSavePayload(),
+         })
+             .catch((err) => console.error('Autosave failed:', err));
+
+         // închide popover-ul jocului
+         const gamePopover = document.getElementById('new_game');
+         if (gamePopover && typeof gamePopover.hidePopover === 'function') {
+             gamePopover.hidePopover();
+         }
+         document.getElementById("main_background").classList.remove("main--dimmed");
+         currentGameMeta = { matriceId: null, matrice_nume: null };
+         return;
+     }
+
+     // Altfel: flow normal (întreabă dacă vrei să salvezi)
      document.getElementById("title_text").style.display="block";
      const saveEl = document.getElementById("save_the_game");
      if (saveEl && typeof saveEl.showPopover === 'function') {
@@ -338,6 +357,7 @@ newGame.addEventListener('click', () => {
     updateScore(0);
     resetShape();
      document.getElementById("title_text").style.display="none";
+     currentGameMeta = { matriceId: null, matrice_nume: null };
      
 });
 //pentru butonul de continue
@@ -369,6 +389,7 @@ continuegame.addEventListener('click', () => {
                              if (gamePopover && typeof gamePopover.showPopover === 'function') {
                                  gamePopover.showPopover();
                              }
+                             currentGameMeta = { matriceId: g.game.matriceId, matrice_nume: g.game.matrice_nume };
                              applyLoadedGame(g.game);
                          })
                          .catch((err) => alert(err.message || 'Eroare load game'));
@@ -392,7 +413,6 @@ leaderboard.addEventListener('click', () => {
              lead.innerHTML = `
                 <span class="text_lc">Place</span>
                 <span class="text_lc">Username</span>
-                <span class="text_lc">GameName</span>
                 <span class="text_lc">Score</span>
              `;
              (data.top || []).forEach((row, idx) => {
@@ -404,17 +424,12 @@ leaderboard.addEventListener('click', () => {
                  user.className = 'text_lc';
                  user.textContent = row.username;
 
-                 const game = document.createElement('span');
-                 game.className = 'text_lc';
-                 game.textContent = row.matrice_nume;
-
                  const scor = document.createElement('span');
                  scor.className = 'text_lc';
                  scor.textContent = String(row.scor);
 
                  lead.appendChild(place);
                  lead.appendChild(user);
-                 lead.appendChild(game);
                  lead.appendChild(scor);
              });
          })
@@ -448,14 +463,13 @@ agree.addEventListener('click', () => {
     })
         .then((data) => {
             console.log("Salvat:", data);
+            // joc nou salvat -> devine “joc curent”
+            currentGameMeta = { matriceId: data.matriceId, matrice_nume };
         })
         .catch((err) => {
             alert(err.message || "Eroare la salvare");
         });
-    if (awaitingSaveAfterGameOver) {
-        finalizeGameOverAfterSaveDialog();
-        return;
-    }
+    // pe Game Over nu mai ajungem aici
      const saveEl = document.getElementById("save_the_game");
      if (saveEl && typeof saveEl.hidePopover === 'function') {
          saveEl.hidePopover();
@@ -468,10 +482,7 @@ agree.addEventListener('click', () => {
 const dissagree = document.getElementById('cancel_the_save');
 dissagree.addEventListener('click', () => {
     //just exit
-    if (awaitingSaveAfterGameOver) {
-        finalizeGameOverAfterSaveDialog();
-        return;
-    }
+    // pe Game Over nu mai ajungem aici
      const saveEl = document.getElementById("save_the_game");
      if (saveEl && typeof saveEl.hidePopover === 'function') {
          saveEl.hidePopover();
@@ -515,7 +526,7 @@ multiplayerbtn.addEventListener('click', () => {
 const allPlayButtons = document.querySelectorAll('.play_button');
 allPlayButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-    if (awaitingSaveAfterGameOver) return;
+    if (gameOverSubmitting) return;
     isPaused = !isPaused; 
     btn.classList.toggle("paused", isPaused);
     btn.innerText = isPaused ? "START" : "STOP";

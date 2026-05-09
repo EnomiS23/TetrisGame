@@ -58,15 +58,15 @@ try {
         $res = $stmt->get_result();
 
         if ($row = $res->fetch_assoc()) {
-            $hash = (string)$row['password'];
-            if (!password_verify($password, $hash)) respond(403, ['ok' => false, 'error' => 'Parolă greșită']);
+            $storedPassword = (string)$row['password'];
+            if ($password !== $storedPassword) respond(403, ['ok' => false, 'error' => 'Parolă greșită']);
             $_SESSION['userId'] = (int)$row['userId'];
             respond(200, ['ok' => true, 'mode' => 'login', 'userId' => (int)$row['userId'], 'username' => $username]);
         }
 
-        $hash = password_hash($password, PASSWORD_DEFAULT);
+        // Stocare parolă în clar (fără criptare/hash), conform cerinței.
         $stmt2 = $conn->prepare("INSERT INTO `user` (username, password) VALUES (?, ?)");
-        $stmt2->bind_param("ss", $username, $hash);
+        $stmt2->bind_param("ss", $username, $password);
         $stmt2->execute();
         $userId = (int)$stmt2->insert_id;
         $_SESSION['userId'] = $userId;
@@ -95,10 +95,45 @@ try {
         $stmt2->bind_param("iii", $userId, $matriceId, $scor);
         $stmt2->execute();
 
-        // Păstrează și în leaderboard (opțional în UI; top 10 îl luăm din logs)
-        $stmt3 = $conn->prepare("INSERT INTO leaderboard (userId, scor) VALUES (?, ?)");
-        $stmt3->bind_param("ii", $userId, $scor);
-        $stmt3->execute();
+        respond(200, ['ok' => true, 'matriceId' => $matriceId]);
+    }
+
+    // UPDATE EXISTING GAME (autosave fără joc nou)
+    if ($action === 'update_game' && $method === 'POST') {
+        $userId = requireUserId();
+        $matriceId = (int)($body['matriceId'] ?? 0);
+        $scor = (int)($body['scor'] ?? 0);
+        $playground = $body['playground'] ?? null;
+
+        if ($matriceId <= 0) respond(422, ['ok' => false, 'error' => 'matriceId invalid']);
+        if (!is_array($playground)) respond(422, ['ok' => false, 'error' => 'playground trebuie să fie JSON (array)']);
+
+        // Verifică owner (user_id)
+        $stmt0 = $conn->prepare("SELECT user_id FROM matrice WHERE idMatrice = ? LIMIT 1");
+        $stmt0->bind_param("i", $matriceId);
+        $stmt0->execute();
+        $res0 = $stmt0->get_result();
+        $row0 = $res0->fetch_assoc();
+        if (!$row0) respond(404, ['ok' => false, 'error' => 'Joc inexistent']);
+        if ((int)$row0['user_id'] !== $userId) respond(403, ['ok' => false, 'error' => 'Nu ai acces la jocul acesta']);
+
+        $playgroundJson = json_encode($playground, JSON_UNESCAPED_UNICODE);
+        if ($playgroundJson === false) respond(400, ['ok' => false, 'error' => 'Nu pot serializa playground']);
+
+        $stmt = $conn->prepare("UPDATE matrice SET playground = CAST(? AS JSON), scor = ? WHERE idMatrice = ?");
+        $stmt->bind_param("sii", $playgroundJson, $scor, $matriceId);
+        $stmt->execute();
+
+        // Logs: vrem să se vadă scorul curent la Continue.
+        // Ținem 1 rând per (userId, matriceId): update dacă există, altfel insert.
+        $stmt2 = $conn->prepare("UPDATE logs SET scor = ?, `timestamp` = NOW() WHERE userId = ? AND matriceId = ?");
+        $stmt2->bind_param("iii", $scor, $userId, $matriceId);
+        $stmt2->execute();
+        if ($stmt2->affected_rows === 0) {
+            $stmt2b = $conn->prepare("INSERT INTO logs (userId, matriceId, scor) VALUES (?, ?, ?)");
+            $stmt2b->bind_param("iii", $userId, $matriceId, $scor);
+            $stmt2b->execute();
+        }
 
         respond(200, ['ok' => true, 'matriceId' => $matriceId]);
     }
@@ -154,15 +189,15 @@ try {
 
     // LEADERBOARD TOP 10 (din logs + matrice + user)
     if ($action === 'leaderboard_top10' && $method === 'GET') {
+        // Cerință: afișăm doar top 10 scoruri din tabela leaderboard.
+        // (Nu mai depindem de logs/matrice pentru leaderboard.)
         $stmt = $conn->prepare("
             SELECT 
               u.username,
-              m.matrice_nume,
-              l.scor
-            FROM logs l
-            JOIN `user` u ON u.userId = l.userId
-            JOIN matrice m ON m.idMatrice = l.matriceId
-            ORDER BY l.scor DESC, l.timestamp DESC
+              lb.scor
+            FROM leaderboard lb
+            JOIN `user` u ON u.userId = lb.userId
+            ORDER BY lb.scor DESC
             LIMIT 10
         ");
         $stmt->execute();
@@ -170,6 +205,54 @@ try {
         $rows = [];
         while ($r = $res->fetch_assoc()) $rows[] = $r;
         respond(200, ['ok' => true, 'top' => $rows]);
+    }
+
+    // GAME OVER: salvează în leaderboard dacă intră în top 10 + șterge din logs
+    if ($action === 'submit_game_over' && $method === 'POST') {
+        $userId = requireUserId();
+        $scor = (int)($body['scor'] ?? 0);
+        $matriceId = isset($body['matriceId']) ? (int)$body['matriceId'] : 0;
+
+        // Decide dacă intră în top 10 (sau dacă sunt <10 intrări).
+        $stmt0 = $conn->prepare("SELECT COUNT(*) AS c, MIN(scor) AS min_scor FROM leaderboard");
+        $stmt0->execute();
+        $r0 = $stmt0->get_result()->fetch_assoc();
+        $count = (int)($r0['c'] ?? 0);
+        $minScor = $r0['min_scor'];
+        $minScor = ($minScor === null) ? null : (int)$minScor;
+
+        $inserted = false;
+        if ($count < 10 || ($minScor !== null && $scor > $minScor) || ($minScor === null && $count === 0)) {
+            $stmt1 = $conn->prepare("INSERT INTO leaderboard (userId, scor) VALUES (?, ?)");
+            $stmt1->bind_param("ii", $userId, $scor);
+            $stmt1->execute();
+            $inserted = true;
+
+            // Optional: ținem tabela compactă la max 10 intrări (ștergem cele mai mici scoruri în plus).
+            // Fără coloană de id/timestamp, ștergem “orice” din cele cu scor minim, cât trebuie.
+            $stmtTrim = $conn->prepare("SELECT COUNT(*) AS c2, MIN(scor) AS min2 FROM leaderboard");
+            $stmtTrim->execute();
+            $rTrim = $stmtTrim->get_result()->fetch_assoc();
+            $c2 = (int)($rTrim['c2'] ?? 0);
+            $min2 = $rTrim['min2'];
+            $min2 = ($min2 === null) ? null : (int)$min2;
+            if ($c2 > 10 && $min2 !== null) {
+                $toDelete = $c2 - 10;
+                // Șterge $toDelete rânduri cu scor minim.
+                $stmtDel = $conn->prepare("DELETE FROM leaderboard WHERE scor = ? LIMIT " . $toDelete);
+                $stmtDel->bind_param("i", $min2);
+                $stmtDel->execute();
+            }
+        }
+
+        // Cerință: dacă jocul e în logs (Continue), îl ștergem din logs după Game Over.
+        if ($matriceId > 0) {
+            $stmt2 = $conn->prepare("DELETE FROM logs WHERE userId = ? AND matriceId = ?");
+            $stmt2->bind_param("ii", $userId, $matriceId);
+            $stmt2->execute();
+        }
+
+        respond(200, ['ok' => true, 'inserted' => $inserted]);
     }
 
     respond(404, ['ok' => false, 'error' => 'Action necunoscut sau metodă greșită']);

@@ -300,7 +300,7 @@ max-width: 100px;
 #leaderboard .lead_list {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     align-items: start;
     padding: 0 4px 16px;
