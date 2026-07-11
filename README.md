@@ -38,8 +38,8 @@ A modern, web-based recreation of the classic Tetris game built using vanilla we
 
 While the project currently delivers a fully functional single-player environment, the architecture was designed with scalability in mind. Future development milestones include:
 
-1.  **Full Database Integration:** Linking the existing PHP handler to a MySQL database to save high scores and logs permanently.
-2.  **Real-Time Online Multiplayer:** Implementing a server-authoritative dedicated server using **Node.js** and **WebSockets (Socket.io)** to allow two players to connect from different devices and play in real-time sync.
+
+1.  **Real-Time Online Multiplayer:** Implementing a server-authoritative dedicated server using **Node.js** and **WebSockets (Socket.io)** to allow two players to connect from different devices and play in real-time sync.
 
 ---
 
